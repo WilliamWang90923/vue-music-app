@@ -15,6 +15,7 @@ export default {
     },
     methods: {
         setTitle(title) {
+            console.log('setTitle method called...')
             this.title = title
         }
     }

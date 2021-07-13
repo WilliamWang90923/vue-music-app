@@ -1,6 +1,7 @@
 const registerRouter = require('./backend/router')
 
 module.exports = {
+ 
   css: {
     loaderOptions: {
       sass: {
@@ -15,6 +16,7 @@ module.exports = {
     before(app) {
       registerRouter(app);
     },
+    hot: true,
   },
   configureWebpack: (config) => {
     if (process.env.npm_config_report) {

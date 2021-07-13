@@ -21,8 +21,9 @@ export default {
       display: inline-block;
       vertical-align: top;
       margin-top: 6px;
-      width: 30px;
+      width: 32px;
       height: 32px;
+      border-radius: 50%;
       margin-right: 9px;
       @include bg-image('logo');
       background-size: 30px 32px;

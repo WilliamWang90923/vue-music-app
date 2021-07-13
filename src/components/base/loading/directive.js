@@ -6,12 +6,8 @@ const relativeCls = 'g-relative'
 
 const loadingDirective = {
     mounted(el, binding, vnode) {
-        console.log('el', el)
-        console.log('vnode', vnode)
         const app = createApp(Loading)
-        console.log('app', app)
         console.log('h', h('div', { id: 'app2' }, 'Love Seele'))
-        console.log(document.createElement('div', 'love Seele'))
         const instance = app.mount(document.createElement('div'))
         console.log('instance.$el', instance.$el)
         el.instance = instance
