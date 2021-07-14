@@ -5,12 +5,18 @@
         </div>
         <h1 class="title">{{ title }}</h1>
         <div class="bg-image" :style="bgImageStyle" ref="bgImageRef">
+            <div class="play-btn-wrapper" :style="playBtnStyle">
+                <div v-show="songs.lengh > 0" class="random-btn" @click="random">
+                    <i class="icon-play"></i>
+                    <span class="text">Random Play</span>
+                </div>
+            </div>
             <div class="filter" :style="filterStyle"></div>
         </div>
-        <scroll class="list" :style="scrollStyle" v-loading="loading" 
+        <scroll class="list" :style="scrollStyle" v-loading="loading" v-no-result:[noResultText]="noResult"
                 :probe-type="3" @scroll="onScroll">
             <div class="song-list-wrapper">
-                <song-list :songs="songs"></song-list>
+                <song-list :songs="songs" @select="selectItem"></song-list>
             </div>
         </scroll>
     </div>
@@ -19,6 +25,7 @@
 <script>
 import SongList from '@/components/base/song-list/song-list'
 import Scroll from '@/components/base/scroll/scroll.vue'
+import { mapActions } from 'vuex'
 
 const RESERVED_HEIGHT = 40
 
@@ -37,7 +44,11 @@ export default {
         },
         title: String,
         pic: String,
-        loading: Boolean
+        loading: Boolean,
+        noResultText: {
+            type: String,
+            default: 'Seele and Wxf are making love now'
+        }
     },
     data() {
         return {
@@ -47,6 +58,18 @@ export default {
         }
     },
     computed: {
+        noResult() {
+            return !this.loading && !this.songs.length
+        },
+        playBtnStyle() {
+            let display = ''
+            if (this.scrollY >= this.maxTranslateY) {
+                display = 'none'
+            }
+            return {
+                display
+            }
+        },
         bgImageStyle() {
             const scrollY = this.scrollY
             let zIndex = 0
@@ -99,7 +122,20 @@ export default {
         },
         onScroll(pos) {
             this.scrollY = -pos.y
-        }
+        },
+        selectItem({ song, index }) {
+            this.selectPlay({
+                list: this.songs,
+                index
+            })
+        },
+        random() {
+            this.randomPlay(this.songs)
+        },
+        ...mapActions([
+            'selectPlay',
+            'randomPlay'
+        ])
     }
 }
 </script>
@@ -144,7 +180,7 @@ export default {
         bottom: 20px;
         z-index: 10;
         width: 100%;
-        .play-btn {
+        .random-btn {
           box-sizing: border-box;
           width: 135px;
           padding: 7px 0;
