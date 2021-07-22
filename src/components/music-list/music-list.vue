@@ -6,7 +6,7 @@
         <h1 class="title">{{ title }}</h1>
         <div class="bg-image" :style="bgImageStyle" ref="bgImageRef">
             <div class="play-btn-wrapper" :style="playBtnStyle">
-                <div v-show="songs.lengh > 0" class="random-btn" @click="random">
+                <div v-show="songs.length > 0" class="random-btn" @click="random">
                     <i class="icon-play"></i>
                     <span class="text">Random Play</span>
                 </div>

@@ -28,3 +28,14 @@ export function processSongs(songs) {
         })
     })
 }
+
+export function getLyric(song) {
+    const mid = song.mid
+
+    return get('/api/getLyric', {
+        mid
+    }).then((result) => {
+        const lyric = result ? result.lyric : '[00:00:00] can not get lyric for this song'
+        return lyric
+    })
+}
