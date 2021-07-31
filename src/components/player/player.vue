@@ -1,5 +1,5 @@
 <template>
-<div class="player">
+<div class="player" v-show="playlist.length">
     <div class="normal-player" v-show="fullScreen">
         <div class="background">
             <img :src="currentSong.pic" alt="">
@@ -11,20 +11,46 @@
             <h1 class="title">{{ currentSong.name }}</h1>
             <h2 class="subtitle">{{ currentSong.singer }}</h2>
         </div>
-        <div class="middle">
-            <div class="middle-l">
+        <div class="middle" 
+             @touchstart.prevent="onMiddleTouchStart"
+             @touchmove.prevent="onMiddleTouchMove"
+             @touchend.prevent="onMiddleTouchEnd"
+        >
+            <div class="middle-l" :style="middleLStyle">
                 <div class="cd-wrapper">
                     <div class="cd" ref="cdRef">
                         <img class="image" ref="cdImageRef" :class="cdCls" :src="currentSong.pic" alt="">
                     </div>
                 </div>
+                <div class="playing-lyric-wrapper">
+                    <div class="playing-lyric">{{ playingLyric }}</div>
+                </div>
             </div>
+            <scroll class="middle-r" ref="lyricScrollRef" :style="middleRStyle">
+                <div class="lyric-wrapper">
+                    <div v-if="currentLyric" ref="lyricListRef">
+                        <p class="text" :class="{'current': currentLineNum === index}"
+                           v-for="(line, index) in currentLyric.lines" :key="line.num"
+                        >
+                        {{ line.txt }}
+                        </p>
+                    </div>
+                    <div class="pure-music" v-show="pureMusicLyric">
+                        <p>{{ pureMusicLyric }}</p>
+                    </div>
+                </div>
+            </scroll>
         </div>
         <div class="bottom">
+            <div class="dot-wrapper">
+                <span class="dot" :class="{'active':currentShow==='cd'}"></span>
+                <span class="dot" :class="{'active':currentShow==='lyric'}"></span>
+            </div>
             <div class="progress-wrapper">
                 <span class="time time-l">{{ formatTime(currentTime) }}</span>
                 <div class="progress-bar-wrapper">
                     <progress-bar 
+                      ref="barRef"
                       :progress="progress"
                       @progress-changing="onProgressChanging"
                       @progress-changed="onProgressChanged">
@@ -52,6 +78,8 @@
             </div>
         </div>
     </div>
+    <mini-player
+        :progress="progress" :togglePlay="togglePlay"></mini-player>
     <audio ref="audioRef" @pause="pause" @canplay="ready" @error="error" 
            @timeupdate="updateTime" @ended="end"></audio>
 </div>
@@ -59,22 +87,30 @@
 
 <script>
 import { useStore } from 'vuex'
-import { computed, watch, ref } from 'vue'
+import { computed, watch, ref, nextTick } from 'vue'
 import useMode from './use-mode'
 import useFavorite from './use-favorite'
 import useCD from './use-cd'
 import useLyric from './use-lyric'
+import useInteractive from './use-interactive'
 import music1 from '@/assets/music/3.mp3'
+import Scroll from '@/components/base/scroll/scroll'
 import progressBar from './progress-bar.vue'
 import { formatTime } from '@/assets/js/utils'
 import { PLAY_MODE } from '@/assets/js/constant'
+import MiniPlayer from './mini-player.vue'
 
 export default {
-  components: { progressBar },
+  components: { 
+      MiniPlayer,
+      progressBar,
+      Scroll
+  },
     name: 'player',
     setup(props, { emit }) {
         // data
         const audioRef = ref(null)
+        const barRef = ref(null)
         const songReady = ref(false)
         const currentTime = ref(0)
         let progressChanging = false
@@ -89,7 +125,10 @@ export default {
         const { modeIcon, changeMode } = useMode()
         const { getFavoriteIcon, toggleFavorite } = useFavorite()
         const { cdCls, cdRef, cdImageRef } = useCD()
-        useLyric()
+        const { currentLyric, currentLineNum, pureMusicLyric, playLyric, playingLyric, lyricListRef, lyricScrollRef, stopLyric } = 
+            useLyric({ songReady, currentTime })
+        const { currentShow, middleLStyle, middleRStyle, onMiddleTouchStart, onMiddleTouchMove, onMiddleTouchEnd } = useInteractive()
+
         // GUI computed properties
         const playlist = computed(() => store.state.playList)
         const disableCls = computed(() => {
@@ -122,7 +161,20 @@ export default {
                 return
             }
             const audioEl = audioRef.value
-            newPlaying ? audioEl.play() : audioEl.pause()
+            if (newPlaying) {
+                audioEl.play()
+                playLyric()
+            } else {
+                audioEl.pause()
+                stopLyric()
+            }
+        })
+
+        watch(fullScreen, async (newFullScreen) => {
+            if (newFullScreen) {
+                await nextTick()
+                barRef.value.setOffset(progress.value)
+            }
         })
 
         function goBack() {
@@ -145,6 +197,7 @@ export default {
                 return
             }
             songReady.value = true
+            playLyric()
         }
 
         function error() {
@@ -205,6 +258,8 @@ export default {
         function onProgressChanging(progress) {
             progressChanging = true
             currentTime.value = currentSong.value.duration * progress
+            playLyric()
+            stopLyric()
         }
 
         function onProgressChanged(progress) {
@@ -214,6 +269,7 @@ export default {
                 if (!playing.value) {
                     store.commit('setPlayingState', true)
                 }
+                playLyric()
         }
 
         function end() {
@@ -232,6 +288,7 @@ export default {
             currentTime,
             currentSong,
             playIcon,
+            playlist,
             progress,
             disableCls,
             togglePlay,
@@ -244,6 +301,7 @@ export default {
             modeIcon,
             cdCls,
             cdRef,
+            barRef,
             cdImageRef,
             updateTime,
             formatTime,
@@ -251,7 +309,19 @@ export default {
             onProgressChanging,
             onProgressChanged,
             getFavoriteIcon,
-            toggleFavorite
+            toggleFavorite,
+            currentLyric,
+            currentLineNum,
+            pureMusicLyric,
+            playingLyric,
+            lyricListRef,
+            lyricScrollRef,
+            currentShow,
+            middleLStyle,
+            middleRStyle,
+            onMiddleTouchStart,
+            onMiddleTouchMove,
+            onMiddleTouchEnd
         }
     }
 }
@@ -357,13 +427,70 @@ export default {
                            }
                        }
                    }
+                   .playing-lyric-wrapper {
+                       width: 80%;
+                       margin: 30px auto 0 auto;
+                       overflow: hidden;
+                       text-align: center;
+                       .playing-lyric {
+                           height: 20px;
+                           line-height: 20px;
+                           font-size: $font-size-medium;
+                           color: $color-text-l;
+                       }
+                   }
                }
+               .middle-r {
+                display: inline-block;
+                vertical-align: top;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                .lyric-wrapper {
+                    width: 80%;
+                    margin: 0 auto;
+                    overflow: hidden;
+                    text-align: center;
+                    .text {
+                        line-height: 32px;
+                        color: $color-text-l;
+                        font-size: $font-size-medium;
+                        &.current {
+                            color: $color-text;
+                        }
+                    }
+                    .pure-music {
+                    padding-top: 50%;
+                    line-height: 32px;
+                    color: $color-text-l;
+                    font-size: $font-size-medium;
+                    }
+                }
+              }
            }
 
            .bottom {
                 position: absolute;
                 bottom: 50px;
                 width: 100%;
+                .dot-wrapper {
+                    text-align: center;
+                    font-size: 0;
+                    .dot {
+                        display: inline-block;
+                        vertical-align: middle;
+                        margin: 0 4px;
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        background: $color-text-l;
+                        &.active {
+                            width: 20px;
+                            border-radius: 5px;
+                            background: $color-text-l;
+                        }
+                    }
+                }
                 .progress-wrapper {
                     display: flex;
                     align-items: center;

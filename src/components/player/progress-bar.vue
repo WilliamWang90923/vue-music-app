@@ -42,8 +42,7 @@ export default {
     // and $el doesn't exist by then
     watch: {
         progress(newProgress) {
-            const barWidth = this.$el.clientWidth - progressBtnWidth
-            this.offset = barWidth * newProgress
+            this.setOffset(newProgress)
         }
     },
     // public touch object to share in touch events
@@ -74,6 +73,10 @@ export default {
             const barWidth = this.$el.clientWidth - progressBtnWidth
             const progress = offsetWidth / barWidth
             this.$emit('progress-changed', progress)
+        },
+        setOffset(progress) {
+            const barWidth = this.$el.clientWidth - progressBtnWidth
+            this.offset = barWidth * progress
         }
     }
 }

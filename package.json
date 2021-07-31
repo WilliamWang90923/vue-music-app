@@ -19,7 +19,8 @@
     "vue3-lazy": "^1.0.0-alpha.1",
     "vue-router": "^4.0.0-0",
     "vuex": "^4.0.0-0",
-    "good-storage": "^1.1.1"
+    "good-storage": "^1.1.1",
+    "lyric-parser": "^1.0.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",
